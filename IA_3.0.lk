@@ -1,0 +1,382 @@
+/*******************
+* CUSTOM CONSTANTS *
+*******************/
+
+// Strategies
+global STRATEGY_DEFENSIVE = 0;
+global STRATEGY_MEDIUM = 1;
+global STRATEGY_OFFENSIVE = 2;
+
+
+/*******************
+* GLOBAL CONSTANTS *
+*******************/
+
+// Leeks
+global ME = getLeek();
+global ENEMIES = getEnemies();
+global NB_ENEMIES = getEnemiesCount();
+global ALLIES = getAllies();
+global NB_ALLIES = getAlliesCount();
+
+// Game mode
+global SOLO_MODE = (NB_ENEMIES == 1 && NB_ALLIES == 0);
+global TEAM_MODE = !(NB_ENEMIES == 1 && NB_ALLIES == 0);
+
+// Actions
+global ACTION_STOP = 0;
+global ACTION_MOVE_TOWARD_LEEK = 1;
+global ACTION_MOVE_AWAY_LEEK = 2;
+global ACTION_USE_WEAPON = 3;
+global ACTION_USE_CHIP = 4;
+
+global ACTION_SEQUENCE = 100;
+
+// Zones
+global ZONE_TOO_CLOSE = 0;
+global ZONE_WEAPON_AREA = 1;
+global ZONE_WEAPON_AREA_WALKING_DISTANCE = 2;
+global ZONE_SPARK_AREA = 3;
+global ZONE_SPARK_AREA_WALKING_DISTANCE = 4;
+global ZONE_FAR_AWAY = 5;
+global ZONE_UNKNOWN = 9;
+
+global ZONE_ENEMY_TOO_CLOSE = 10;
+global ZONE_ENEMY_WEAPON_AREA = 11;
+global ZONE_ENEMY_WEAPON_AREA_WALKING_DISTANCE = 12;
+global ZONE_ENEMY_SPARK_AREA = 13;
+global ZONE_ENEMY_SPARK_AREA_WALKING_DISTANCE = 14;
+global ZONE_ENEMY_FAR_AWAY = 15;
+global ZONE_ENEMY_UNKNOWN = 19;
+
+global ALL_ZONES = [ZONE_TOO_CLOSE, ZONE_WEAPON_AREA, ZONE_WEAPON_AREA_WALKING_DISTANCE, 
+                   ZONE_SPARK_AREA, ZONE_SPARK_AREA_WALKING_DISTANCE, ZONE_FAR_AWAY,
+                   ZONE_ENEMY_TOO_CLOSE, ZONE_ENEMY_WEAPON_AREA, ZONE_ENEMY_WEAPON_AREA_WALKING_DISTANCE,
+                   ZONE_ENEMY_SPARK_AREA, ZONE_ENEMY_SPARK_AREA_WALKING_DISTANCE, ZONE_ENEMY_FAR_AWAY];
+
+
+/*****************
+* BASE ALGORITHM *
+*****************/
+//Parameters
+global WEAPON = WEAPON_DOUBLE_GUN;
+
+//Context variables
+global LAST_WEAPON_INVALID = false;
+global LAST_CHIP_INVALID = false;
+global LAST_TURN_HELMET;
+global LAST_TURN_BANDAGE;
+
+
+//Let's go
+if(getWeapon() != WEAPON){
+        // On prend le pistolet
+        setWeapon(WEAPON); // Attention : coûte 1 PT
+}
+
+// For the moment, I assume I am always solo
+do {
+        action = decideNextActionSolo();
+        executeAction(action);
+} while(action !== STOP());
+
+
+
+/***********************
+* FUNCTIONAL FUNCTIONS *
+***********************/
+function decideNextActionSolo() {
+        //Define useful variables
+        var ENEMY = getNearestEnemy();
+        var MP_NB = getMP();
+        var TP_NB = getTP();
+        var ENEMY_MP_NB = getMP(ENEMY);
+        var ENEMY_TP_NB = getTP(ENEMY);
+        var LIFE = getLife();
+        var ENEMY_LIFE = getLife(ENEMY);
+
+        var zones = whichZones(ME, ENEMY);
+        var strategy = defineStrategy(ME, ENEMY);
+
+        // ZONE : trop près de l'adversaire pour tirer
+        if (inArray(zones, ZONE_TOO_CLOSE)){
+                debug("=== ZONE_TOO_CLOSE ===");
+                if(TP_NB >= 3 && MP_NB > 0){
+                        return AWAY_FROM(ENEMY);
+                } else if(TP_NB >= 3){
+                        return SPARK(ENEMY);
+                } else if(TP_NB == 2){
+                        return BANDAGE(ME);
+                }
+
+                return STOP();
+        }
+
+        else if(inArray(zones, ZONE_WEAPON_AREA)){
+                debug("=== ZONE_WEAPON_AREA ===");
+                if(TP_NB == 8){
+                        return [ACTION_SEQUENCE, FIRE(ENEMY), FIRE(ENEMY)];
+                } else if(TP_NB == 7){
+                        return [ACTION_SEQUENCE, FIRE(ENEMY), SPARK(ENEMY)];
+                } else if(TP_NB == 6){
+                        return [ACTION_SEQUENCE, SPARK(ENEMY), SPARK(ENEMY)];
+                } else if(TP_NB == 5){
+                        if(getLife() <= getTotalLife()-15){
+                                return [ACTION_SEQUENCE, SPARK(ENEMY), BANDAGE(ME)];
+                        } else {
+                                return FIRE(ENEMY);
+                        }
+                } else if(TP_NB == 4){
+                        return FIRE(ENEMY);
+                } else if(TP_NB==3){
+                        return SPARK(ENEMY);
+                } else if(TP_NB==2){
+                        return BANDAGE(ME);
+                } else if(!inArray(ZONE_ENEMY_WEAPON_AREA) && MP_NB > 0){
+                        return AWAY_FROM(ENEMY);
+                } else if(MP_NB > 0) {
+                        return TOWARD(ENEMY);
+                }
+
+                return STOP();
+        }
+
+        else if(inArray(zones, ZONE_SPARK_AREA)){
+                debug("=== ZONE_SPARK_AREA ===");
+                //TODO
+                if(canAdvanceTo(ME, ENEMY, ZONE_WEAPON_AREA) && TP_NB >= 4){
+                        return TOWARD(ENEMY);
+                } else if(TP_NB >= 3){
+                        return SPARK(ENEMY);
+                } else if(TP_NB == 2){
+                        return BANDAGE(ME);
+                } else if(inArray(zones, ZONE_ENEMY_WEAPON_AREA) && MP_NB > 0){
+                        if(canGetOut(ME, ENEMY, ZONE_ENEMY_WEAPON_AREA)){
+                                return AWAY_FROM(ENEMY);
+                        } else {
+                                TOWARD(ENEMY)
+                        } 
+                } else if(inArray(zones, ZONE_ENEMY_CHIP_AREA) && MP_NB > 0) {
+                        if(canGetOut(ME, ENEMY, ZONE_ENEMY_CHIP_AREA)){
+                                return AWAY_FROM(ENEMY);
+                        } else if(canAdvanceAvoiding(ME, ENEMY, ZONE_ENEMY_WEAPON_AREA)) {
+                                return TOWARD(ENEMY)
+                        }
+                } else if(MP_NB > 0) {
+                        return AWAY_FROM(ENEMY);
+                }
+
+                return STOP();
+        }
+
+        else if(inArray(zones, ZONE_WEAPON_AREA_WALKING_DISTANCE)){
+                debug("=== ZONE_WEAPON_AREA_WALKING_DISTANCE ===");
+                if(MP_NB > 0){}
+                        return TOWARD(ENEMY);
+                } else {
+                        if(canUseHelmet()){
+                                return HELMET();
+                        } else if(canUseBandage()){
+                                return BANDAGE();
+                        }
+                }
+                return STOP();
+        }
+
+        else if(inArray(zones, ZONE_SPARK_AREA_WALKING_DISTANCE)){
+                debug("=== ZONE_SPARK_AREA_WALKING_DISTANCE ===");
+                if(MP_NB > 0){}
+                        return TOWARD(ENEMY);
+                } else {
+                        if(canUseHelmet()){
+                                return HELMET();
+                        } else if(canUseBandage()){
+                                return BANDAGE();
+                        }
+                }
+                return STOP();
+        }
+
+        else if(inArray(zones, ZONE_FAR_AWAY)){
+                debug("=== ZONE_FAR_AWAY ===");
+                if(canAdvanceAvoiding(ME, ENEMY, ZONE_ENEMY_CHIP_AREA)){
+                        return TOWARD(ENEMY);
+                }
+
+                return STOP();
+        }
+
+        else {
+                debug("=== ZONE ERROR !!! ===");
+                debug(distance(ME, ENEMY));
+                return STOP();
+        }
+
+
+        return STOP();
+}
+
+function executeAction(action) {
+        var actionType = action[0];
+
+        if(actionType === ACTION_MOVE_TOWARD_LEEK){
+                //get arguments for this action
+                var leek = action[1];
+                //execute action
+                moveToward(leek, 1);
+        }
+
+        else if(actionType === ACTION_MOVE_AWAY_LEEK) {
+                //get arguments for this action
+                var leek = action[1];
+                //execute action
+                moveAwayFrom(leek, 1);
+        }
+
+        else if(actionType === ACTION_USE_WEAPON) {
+                //get arguments for this action
+                var leek = action[2];
+                //execute action
+                LAST_WEAPON_INVALID = (useWeapon(leek) == USE_INVALID_POSITION);
+        }
+
+        else if(actionType === ACTION_USE_CHIP) {
+                //get arguments for this action
+                var chip = action(1);
+                var leek = action[2];
+                //execute action
+                useChip(chip, leek);
+        } 
+
+        else if(actionType === ACTION_STOP){
+                useChip(CHIP_HELMET, ME);
+                useChip(CHIP_BANDAGE, ME);
+        }
+
+        else if(actionType === ACTION_SEQUENCE){
+                var array = action;
+                remove(array, 0);
+                for(var subAction in array){
+                        executeAction(array);
+                }
+        }
+
+        return;
+}
+
+function whichZones(leek1, leek2){
+        // Define in which zones we are
+        var distance = distance(leek1, leek2);
+        
+        zones = [];
+        for(var zone in ALL_ZONES){
+                var range = areaLimits(zone);
+                var min = range[0];
+                var max = range[1];
+                if(distance >= min && distance <= max){
+                        push(zones, zone);
+                }
+        }
+
+        return zones;
+}
+
+function defineStrategy(me, enemy){
+        //TODO
+        // Define the strategy that me should have against enemy
+        // Not used yet
+        return STRATEGY_MEDIUM;
+}
+
+function canAdavanceTo(me, enemy, area){
+        //Defines if leek1 has enough MP to go to the weapon area
+        var mp = getMP();
+        var dist = distance(me, enemy);
+        var areaMax = areaLimits(area)[1];
+        return (dist-mp) <= areaMax;
+}
+
+function canAdvanceAvoiding(me, enemy, area){
+        var dist = distance(me, enemy);
+        var areaMax = areaLimits(area)[1];
+        return dist > areaMax;
+}
+
+function canGetOut(me, enemy, area){
+        var mp = getMP();
+        var dist = distance(me, enemy);
+        var areaMax = areaLimits(area)[1];
+        return (dist+mp) > areaMax;
+}
+
+function areaLimits(area) {
+        if(area === ZONE_TOO_CLOSE || area === ZONE_ENEMY_TOO_CLOSE){
+                return [0,1];
+        } else if(area === ZONE_WEAPON_AREA || area === ZONE_ENEMY_WEAPON_AREA){
+                return [2,8];
+        } else if(area === ZONE_SPARK_AREA || area === ZONE_ENEMY_SPARK_AREA){
+                return [0,10];
+        } else if(area === ZONE_FAR_AWAY || area === ZONE_ENEMY_FAR_AWAY){
+                return [11,1000];
+        } else if(area === ZONE_WEAPON_AREA_WALKING_DISTANCE){
+                return [2,8+getMP()];
+        } else if(area === ZONE_ENEMY_WEAPON_AREA_WALKING_DISTANCE){
+                return [2,8+getMP(getNearestEnemy())];
+        } else if(area === ZONE_SPARK_AREA_WALKING_DISTANCE){
+                return [0,10+getMP()];
+        } else if (area === ZONE_ENEMY_SPARK_AREA_WALKING_DISTANCE){
+                return [0,10+getMP(getNearestEnemy())];
+        }
+        return [0,1000];
+}
+
+
+/*****************
+* BASE FUNCTIONS *
+*****************/
+// Get the distance between Leek1 and Leek2
+function distance(leek1, leek2){
+        return getCellDistance(getCell(leek1), getCell(leek));
+}
+
+function canWalk(){
+        return getMP() > 0;
+}
+
+function canUseHelmet(){
+        return LAST_TURN_HELMET < getTurn()-3 && getTP() >= 4;
+}
+
+function canUseBandage(){
+        return LAST_TURN_BANDAGE !== getTurn() && getTP() >= 2;
+}
+
+function SPARK(leek){
+        return [ACTION_USE_CHIP, CHIP_SPARK, leek];
+}
+
+function BANDAGE(leek){
+        LAST_TURN_BANDAGE = getTurn();
+        return [ACTION_USE_CHIP, CHIP_BANDAGE, leek];
+}
+
+function HELMET(leek){
+        LAST_TURN_HELMET = getTurn();
+        return [ACTION_USE_CHIP, CHIP_HELMET, leek];
+}
+
+function FIRE(leek){
+        return [ACTION_USE_WEAPON, leek];
+}
+
+function TOWARD(leek){
+        return [ACTION_MOVE_TOWARD_LEEK, leek];
+}
+
+function AWAY_FROM(leek){
+        return [ACTION_MOVE_AWAY_LEEK, leek];
+}
+
+function STOP(){
+        return [ACTION_STOP];
+}
