@@ -242,6 +242,14 @@ function decideNextActionSolo() {
             return AWAY_FROM(ENEMY);
         }
 
+        if(inArray(WEAPONS_INVALID, WEAPON) && getMP() > 0){
+            if(distance(ME, ENEMY) > 2){
+                return TOWARD(ENEMY);
+            } else if(distance(ME,ENEMY) < 7) {
+                return AWAY_FROM(ENEMY);
+            }
+        }
+
         // Check if we can attack
         if(canUseWeapons(ME, ENEMY, WEAPON) && getTP()>=4){
             debug("====> We can use weapons : fire");
@@ -267,7 +275,7 @@ function decideNextActionSolo() {
 
         // Let's see how we should move now depending on the strategy
         if(getMP() > 0){
-            if(strategy === STRATEGY_DEFENSIVE){
+            /*if(strategy === STRATEGY_DEFENSIVE){
                 if(canAdvanceWithoutDanger(ME, ENEMY)){
                     debug("====> We can advance without danger : go");
                     return TOWARD(ENEMY);
@@ -284,12 +292,12 @@ function decideNextActionSolo() {
                 }
             } 
 
-            else if(strategy === STRATEGY_OFFENSIVE && getMP(ME)>0 && distance(ME, ENEMY) > 1){
+            else*/ if(strategy === STRATEGY_OFFENSIVE && getMP(ME)>0 && distance(ME, ENEMY) > 1){
                 debug("====> We are offensive : go !!!");
                 return TOWARD(ENEMY);
             } 
 
-            else if(strategy === STRATEGY_MEDIUM){
+            else /*if(strategy === STRATEGY_MEDIUM)*/{
                 if(canAdvanceWithoutDanger(ME, ENEMY)){
                     debug("====> We can advance without danger : go");
                     return TOWARD(ENEMY);
@@ -319,6 +327,7 @@ function executeAction(action) {
                 var leek = action[1];
                 //execute action
                 if(moveToward(leek, 1) > 0){
+                    WEAPONS_INVALID = [];
                     STEP_BACK_BLOCKED = false;
                 }
         }
@@ -329,6 +338,7 @@ function executeAction(action) {
                 var leek = action[1];
                 //execute action
                 if(0 === moveAwayFrom(leek, 1)){
+                    WEAPONS_INVALID = [];
                     STEP_BACK_BLOCKED = true;
                 }
         }
