@@ -80,131 +80,6 @@ do {
 
 
 
-
-
-
-
-/***********************
-* FUNCTIONAL FUNCTIONS *
-***********************/
-
-//Define the strategy
-function defineStrategy(me, enemy){
-        //TODO
-        // Define the strategy that me should have against enemy
-        // Not used yet
-        
-        if(isStrongerThan(me, enemy)){
-                debug("============> STRATEGY : OFFENSIVE");
-                return STRATEGY_OFFENSIVE;
-        } else if (isStrongerThan(enemy, me)){
-                debug("============> STRATEGY : DEFENSIVE");
-                return STRATEGY_DEFENSIVE;
-        }
-        debug("============> STRATEGY : MEDIUM");
-        return STRATEGY_MEDIUM;
-}
-
-//Checks on if we can use things
-function canUseWeapons(me, enemy, weapon){
-        var maxScope = getWeaponMaxScope(weapon);
-        maxScope = 7;
-        return !inArray(WEAPONS_INVALID, weapon) && (distance(me, enemy) <= maxScope);
-}
-
-function canAdvanceToUseWeapon(me, enemy, weapon){
-        var maxScope = getWeaponMaxScope(weapon);
-        maxScope = 7;
-        var minScope = getWeaponMinScope(weapon);
-        minScope = 2;
-        var mp = getMP(me);
-        var dist = distance(me, enemy);
-        return mp > 0 && !inArray(WEAPONS_INVALID, weapon) && (dist-mp <= maxScope && dist-1 >= minScope);
-}
-
-function canUseChips(me, enemy, chip){
-        var maxScope = getChipMaxScope(chip);
-        if(chip === CHIP_PEBBLE){
-            maxScope = 5;
-        } else if(chip === CHIP_SPARK){
-            maxScope = 10;
-        }
-        return !inArray(CHIPS_COOLDOWN, chip) && distance(me, enemy) <= maxScope;
-}
-
-function canAdvanceToUseChip(me, enemy, chip){
-        var maxScope = getChipMaxScope(chip);
-        if(chip === CHIP_PEBBLE){
-            maxScope = 5;
-        } else if(chip === CHIP_SPARK){
-            maxScope = 10;
-        }
-        var minScope = getChipMinScope(chip);
-        if(chip === CHIP_PEBBLE){
-            minScope = 1;
-        } else if(chip === CHIP_SPARK){
-            minScope = 1;
-        }
-        var mp = getMP(me);
-        var dist = distance(me, enemy);
-        return mp > 0 && !inArray(CHIPS_COOLDOWN, chip) && dist-mp <= maxScope && dist-1 >= minScope;
-}
-
-function tooCloseToUseWeapon(me, enemy, weapon){
-        var minScope = getWeaponMinScope(weapon);
-        minScope = 2;
-        return distance(me, enemy) < minScope;
-}
-
-function canAdvanceWithoutDanger(me, enemy){
-        var maxScope = getChipMaxScope(CHIP_SPARK);
-        maxScope = 10;
-        var dist = distance(me, enemy);
-        var enemy_mp = getMP(enemy);
-        var mp = getMP(me);
-        var danger = maxScope;
-        return mp > 0 && dist-1-enemy_mp > danger;
-}
-
-function safe(me, enemy){
-        var dist = distance(me, enemy);
-        var enemy_mp = getMP(enemy);
-        var danger = 10;
-        return dist > danger + enemy_mp;
-}
-
-function canRun(me, enemy, weapon, chip, strategy){
-    var dist = distance(me, enemy);
-    var weaponScope = getWeaponMaxScope(weapon);
-    weaponScope = 7;
-    var chipScope = getChipMaxScope(chip);
-    chipScope = 10;
-
-    if(getMP(me) == 0){
-        return false;
-    }
-
-    if(dist-getMP(enemy) <= weaponScope && dist-getMP(enemy)+getMP(me) > weaponScope){
-        return true;
-    }
-
-    if(strategy == STRATEGY_DEFENSIVE && dist-getMP(enemy) <= chipScope && dist-getMP(enemy)+getMP(me) > chipScope){
-        return true;
-    }
-
-    if(strategy === STRATEGY_DEFENSIVE && dist <= weaponScope && dist+getMP(me) > weaponScope){
-        return true;
-    }
-
-    if(strategy === STRATEGY_DEFENSIVE && dist <= chipScope && dist+getMP(me) > chipScope){
-        return true;
-    }
-
-    return false;
-}
-
-
-
 //Take a decision on what will be the next action
 function decideNextActionSolo() {
         if(getAliveEnemiesCount() == 0){
@@ -226,7 +101,12 @@ function decideNextActionSolo() {
 
         //Initializee
         if(!INIT_CHIP){
-            if(getTurn()%3 === 0){
+            if(inDanger(ME) && !inDanger(ENEMY) && canUseChips(ME, ENEMY, CHIP_CURE)){
+                INIT_CHIP = true;
+                return [ACTION_SEQUENCE, CURE(ME), BANDAGE(ME)];
+            } else if(inDanger(ME) && !inDanger(ENEMY) && canUseChips(ME, ME, CHIP_BANDAGE)) {
+                return BANDAGE(ME);
+            } else if(getTurn()%3 === 0){
                 INIT_CHIP = true;
                 return PROTEIN(ME);
             } else if(getTurn()%4 === 1){
@@ -364,7 +244,7 @@ function executeAction(action) {
                 var leek = action[2];
                 //execute action
 
-                debug("Chip NB :" + chip);
+                debug("Chip :" + getChipName(chip));
 
                 var cr = useChip(chip, leek);
 
@@ -402,6 +282,132 @@ function executeAction(action) {
 
 
 
+/***********************
+* FUNCTIONAL FUNCTIONS *
+***********************/
+
+//Define the strategy
+function defineStrategy(me, enemy){
+        //TODO
+        // Define the strategy that me should have against enemy
+        // Not used yet
+        
+        if(isStrongerThan(me, enemy)){
+                debug("============> STRATEGY : OFFENSIVE");
+                return STRATEGY_OFFENSIVE;
+        } else if (isStrongerThan(enemy, me)){
+                debug("============> STRATEGY : DEFENSIVE");
+                return STRATEGY_DEFENSIVE;
+        }
+        debug("============> STRATEGY : MEDIUM");
+        return STRATEGY_MEDIUM;
+}
+
+//Checks on if we can use things
+function canUseWeapons(me, enemy, weapon){
+        var maxScope = getWeaponMaxScope(weapon);
+        maxScope = 7;
+        return !inArray(WEAPONS_INVALID, weapon) && (distance(me, enemy) <= maxScope);
+}
+
+function canAdvanceToUseWeapon(me, enemy, weapon){
+        var maxScope = getWeaponMaxScope(weapon);
+        maxScope = 7;
+        var minScope = getWeaponMinScope(weapon);
+        minScope = 2;
+        var mp = getMP(me);
+        var dist = distance(me, enemy);
+        return mp > 0 && !inArray(WEAPONS_INVALID, weapon) && (dist-mp <= maxScope && dist-1 >= minScope);
+}
+
+function canUseChips(me, enemy, chip){
+        var maxScope = getChipMaxScope(chip);
+        if(chip === CHIP_PEBBLE){
+            maxScope = 5;
+        } else if(chip === CHIP_SPARK){
+            maxScope = 10;
+        }  else if(chip === CHIP_BANDAGE){
+            maxScope = 6;
+        }
+        return !inArray(CHIPS_COOLDOWN, chip) && distance(me, enemy) <= maxScope;
+}
+
+function canAdvanceToUseChip(me, enemy, chip){
+        var maxScope = getChipMaxScope(chip);
+        if(chip === CHIP_PEBBLE){
+            maxScope = 5;
+        } else if(chip === CHIP_SPARK){
+            maxScope = 10;
+        }
+        var minScope = getChipMinScope(chip);
+        if(chip === CHIP_PEBBLE){
+            minScope = 1;
+        } else if(chip === CHIP_SPARK){
+            minScope = 1;
+        }
+        var mp = getMP(me);
+        var dist = distance(me, enemy);
+        return mp > 0 && !inArray(CHIPS_COOLDOWN, chip) && dist-mp <= maxScope && dist-1 >= minScope;
+}
+
+function tooCloseToUseWeapon(me, enemy, weapon){
+        var minScope = getWeaponMinScope(weapon);
+        minScope = 2;
+        return distance(me, enemy) < minScope;
+}
+
+function canAdvanceWithoutDanger(me, enemy){
+        var maxScope = getChipMaxScope(CHIP_SPARK);
+        maxScope = 10;
+        var dist = distance(me, enemy);
+        var enemy_mp = getMP(enemy);
+        var mp = getMP(me);
+        var danger = maxScope;
+        return mp > 0 && dist-1-enemy_mp > danger;
+}
+
+function safe(me, enemy){
+        var dist = distance(me, enemy);
+        var enemy_mp = getMP(enemy);
+        var danger = 10;
+        return dist > danger + enemy_mp;
+}
+
+function canRun(me, enemy, weapon, chip, strategy){
+    var dist = distance(me, enemy);
+    var weaponScope = getWeaponMaxScope(weapon);
+    weaponScope = 7;
+    var chipScope = getChipMaxScope(chip);
+    chipScope = 10;
+
+    if(getMP(me) == 0){
+        return false;
+    }
+
+    if(dist-getMP(enemy) <= weaponScope && dist-getMP(enemy)+getMP(me) > weaponScope){
+        return true;
+    }
+
+    if(strategy == STRATEGY_DEFENSIVE && dist-getMP(enemy) <= chipScope && dist-getMP(enemy)+getMP(me) > chipScope){
+        return true;
+    }
+
+    if(strategy === STRATEGY_DEFENSIVE && dist <= weaponScope && dist+getMP(me) > weaponScope){
+        return true;
+    }
+
+    if(strategy === STRATEGY_DEFENSIVE && dist <= chipScope && dist+getMP(me) > chipScope){
+        return true;
+    }
+
+    return false;
+}
+
+
+
+
+
+
 /*****************
 * BASE FUNCTIONS *
 *****************/
@@ -424,7 +430,11 @@ function isStrongerThan(leek1, leek2){
 }
 
 function inDanger(leek){
-        return leek < 120;
+        return getLife(leek) < 60;
+}
+
+function displayChip(){
+
 }
 
 function SPARK(leek){
