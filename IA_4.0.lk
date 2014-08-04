@@ -176,7 +176,7 @@ function decideNextActionSolo() {
         } else if(canAdvanceToUseWeapon(ME, ENEMY, WEAPON)){
             debug("====> We can advance to use weapons : go");
             return TOWARD(ENEMY);
-        } else if(tooCloseToUseChip(ME, ENEMY, CHIP_FLAME) && getTP() == 8 && getMP() > 0 && !STEP_BACK_BLOCKED){
+        } else if(tooCloseToUseChip(ME, ENEMY, CHIP_FLAME) && getTP() >= 4 && getMP() > 0 && !STEP_BACK_BLOCKED){
             debug("====> Too close to use flame");
             return AWAY_FROM(ENEMY);
         } else if(canUseChips(ME, ENEMY, CHIP_FLAME)){
