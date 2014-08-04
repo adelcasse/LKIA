@@ -105,26 +105,18 @@ function decideNextActionSolo() {
 
         //Initializee
         if(!INIT_CHIP){
-            if(inDanger(ME) && !inDanger(ENEMY) && canUseChips(ME, ENEMY, CHIP_CURE)){
+            if(inDanger(ME) && !inDanger(ENEMY)){
                 INIT_CHIP = true;
-                return [ACTION_SEQUENCE, CURE(ME), BANDAGE(ME)];
-            } else if(inDanger(ME) && !inDanger(ENEMY) && canUseChips(ME, ME, CHIP_BANDAGE)) {
-                return [ACTION_SEQUENCE, STRETCH(ME), BANDAGE(ME)];
-            } else if(getTurn()%3 === 0){
-                if(getTurn()%4 === INIT_SHIFT%4){
-                    INIT_SHIFT++;
-                }
+                return [ACTION_SEQUENCE, STRETCH(ME), CURE(ME), HELMET(ME), BANDAGE(ME)];
+            } else if(getTurn()%4 === 1){
+                INIT_CHIP = true;
+                return [ACTION_SEQUENCE, STRETCH(ME)];
+            } else if(getTurn()%4 === 2){
+                INIT_CHIP = true;
+                return [ACTION_SEQUENCE, HELMET(ME), CURE(ME)];
+            } else if(getTurn()%4 === 3){
                 INIT_CHIP = true;
                 return PROTEIN(ME);
-            } else if(getTurn()%4 === (INIT_SHIFT-1)%4){
-                INIT_CHIP = true;
-                return STRETCH(ME);
-            } else if(getTurn()%4 === INIT_SHIFT%4){
-                INIT_CHIP = true;
-                return HELMET(ME);
-            } else if(strategy === STRATEGY_DEFENSIVE && getTurn()%2 === 0 && canUseChips(ME, ENEMY, CHIP_CURE) && !inDanger(ENEMY)){
-                INIT_CHIP = true;
-                return [ACTION_SEQUENCE, STRETCH(ME), HELMET(ME), CURE(ME), BANDAGE(ME)];            
             }
         }
 
@@ -209,29 +201,8 @@ function decideNextActionSolo() {
 
         // Let's see how we should move now depending on the strategy
         if(getMP() > 0){
-            /*if(strategy === STRATEGY_DEFENSIVE){
-                if(canAdvanceWithoutDanger(ME, ENEMY)){
-                    debug("====> We can advance without danger : go");
-                    return TOWARD(ENEMY);
-                }
-
-                else if(safe(ME, ENEMY)){
-                    debug("====> We are safe : stay here");
-                    STOP();
-                } 
-
-                else if(!tooCloseToUseWeapon(ME, ENEMY, WEAPON) && !STEP_BACK_BLOCKED) {
-                    debug("====> We are : step back !!!");
-                    return AWAY_FROM(ENEMY);
-                }
-            } 
-
-            else*/ if(strategy === STRATEGY_OFFENSIVE && getMP(ME)>0 && distance(ME, ENEMY) > 1){
+            if(strategy === STRATEGY_OFFENSIVE && getMP(ME)>0 && distance(ME, ENEMY) > 1){
                 debug("====> We are offensive : go !!!");
-                return TOWARD(ENEMY);
-            } 
-
-            else /*if(strategy === STRATEGY_MEDIUM)*/{
                 if(canAdvanceWithoutDanger(ME, ENEMY)){
                     debug("====> We can advance without danger : go");
                     return TOWARD(ENEMY);
@@ -242,7 +213,24 @@ function decideNextActionSolo() {
                     return STOP();
                 }
 
-                else if(canRun(ME, ENEMY, WEAPON, CHIP_SPARK, STRATEGY_MEDIUM) && !STEP_BACK_BLOCKED){
+                else {
+                    return TOWARD(ENEMY);
+                }
+            } 
+
+            else {
+
+                if(canAdvanceWithoutDanger(ME, ENEMY)){
+                    debug("====> We can advance without danger : go");
+                    return TOWARD(ENEMY);
+                }
+
+                else if(safe(ME,ENEMY)){
+                    debug("====> We are safe : stay here");
+                    return STOP();
+                }
+
+                else if(canRun(ME, ENEMY, WEAPON, CHIP_SPARK, strategy) && !STEP_BACK_BLOCKED){
                     debug("====> We can run : go");
                     return AWAY_FROM(ENEMY);
                 }
@@ -273,9 +261,11 @@ function executeAction(action) {
                 var leek = action[1];
                 //execute action
                 if(0 === moveAwayFrom(leek, 1)){
+                    STEP_BACK_BLOCKED = true;
+                } else {
+                    STEP_BACK_BLOCKED = false;
                     WEAPONS_INVALID = [];
                     CHIPS_INVALID = [];
-                    STEP_BACK_BLOCKED = true;
                 }
         }
 
@@ -489,7 +479,7 @@ function canRun(me, enemy, weapon, chip, strategy){
     }
     var chipScope = getChipMaxScope(chip);
     if(chip === CHIP_PEBBLE){
-            chipScope = 5;
+        chipScope = 5;
     } else if(chip === CHIP_SPARK){
         chipScope = 10;
     } else if(chip === CHIP_ICE){
@@ -508,13 +498,13 @@ function canRun(me, enemy, weapon, chip, strategy){
         return true;
     }
 
-    if(strategy === STRATEGY_DEFENSIVE && dist <= weaponScope && dist+getMP(me) > weaponScope){
+    /*if(strategy === STRATEGY_DEFENSIVE && dist <= weaponScope && dist+getMP(me) > weaponScope){
         return true;
     }
 
     if(strategy === STRATEGY_DEFENSIVE && dist <= chipScope && dist+getMP(me) > chipScope){
         return true;
-    }
+    }*/
 
     return false;
 }
@@ -546,7 +536,7 @@ function isStrongerThan(leek1, leek2){
 }
 
 function inDanger(leek){
-        return getLife(leek) < 60;
+        return getLife(leek) < 100;
 }
 
 function displayChip(){
