@@ -109,7 +109,7 @@ function decideNextActionSolo() {
                 INIT_CHIP = true;
                 return [ACTION_SEQUENCE, CURE(ME), BANDAGE(ME)];
             } else if(inDanger(ME) && !inDanger(ENEMY) && canUseChips(ME, ME, CHIP_BANDAGE)) {
-                return BANDAGE(ME);
+                return [ACTION_SEQUENCE, STRETCH(ME), BANDAGE(ME)];
             } else if(getTurn()%3 === 0){
                 if(getTurn()%4 === INIT_SHIFT%4){
                     INIT_SHIFT++;
@@ -128,10 +128,34 @@ function decideNextActionSolo() {
             }
         }
 
-        if(inArray(WEAPONS_INVALID, WEAPON) && getMP() > 0){
+        if(inArray(CHIPS_INVALID, CHIP_FLAME) && getMP() > 0 && getTP() == 8){
             if(distance(ME, ENEMY) > 2){
                 return TOWARD(ENEMY);
-            } else if(distance(ME,ENEMY) < 7) {
+            } else if(distance(ME,ENEMY) < 7 && !STEP_BACK_BLOCKED) {
+                return AWAY_FROM(ENEMY);
+            }
+        } else if(inArray(WEAPONS_INVALID, WEAPON) && getTP() >= 5 && getMP() > 0){
+            if(distance(ME, ENEMY) > 1){
+                return TOWARD(ENEMY);
+            } else if(distance(ME,ENEMY) < 8 && !STEP_BACK_BLOCKED) {
+                return AWAY_FROM(ENEMY);
+            }
+        } else if(inArray(CHIPS_INVALID, CHIP_FLAME) && getTP() >= 4 && getMP() > 0){
+            if(distance(ME, ENEMY) > 2){
+                return TOWARD(ENEMY);
+            } else if(distance(ME,ENEMY) < 7 && !STEP_BACK_BLOCKED) {
+                return AWAY_FROM(ENEMY);
+            }
+        } else if(inArray(CHIPS_INVALID, CHIP_ICE) && getTP() >= 4 && getMP() > 0){
+            if(distance(ME, ENEMY) > 1){
+                return TOWARD(ENEMY);
+            } else if(distance(ME,ENEMY) < 8 && !STEP_BACK_BLOCKED) {
+                return AWAY_FROM(ENEMY);
+            }
+        } else if(inArray(CHIPS_INVALID, CHIP_PEBBLE) && getTP() >= 2 && getMP() > 0){
+            if(distance(ME, ENEMY) > 1){
+                return TOWARD(ENEMY);
+            } else if(distance(ME,ENEMY) < 5 && !STEP_BACK_BLOCKED) {
                 return AWAY_FROM(ENEMY);
             }
         }
