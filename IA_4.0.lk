@@ -50,6 +50,7 @@ global STEP_BACK_BLOCKED = false;
 global LAST_ENEMY_FORCE;
 
 global INIT_CHIP = false;
+global INIT_SHIFT = 2;
 
 
 
@@ -110,17 +111,20 @@ function decideNextActionSolo() {
             } else if(inDanger(ME) && !inDanger(ENEMY) && canUseChips(ME, ME, CHIP_BANDAGE)) {
                 return BANDAGE(ME);
             } else if(getTurn()%3 === 0){
+                if(getTurn()%4 === INIT_SHIFT%4){
+                    INIT_SHIFT++;
+                }
                 INIT_CHIP = true;
                 return PROTEIN(ME);
-            } else if(getTurn()%4 === 0 && getTurn() !== 8 || getTurn() === 1){
+            } else if(getTurn()%4 === (INIT_SHIFT-1)%4){
                 INIT_CHIP = true;
                 return STRETCH(ME);
-            } else if(getTurn()%4 === 1){
+            } else if(getTurn()%4 === INIT_SHIFT%4){
                 INIT_CHIP = true;
                 return HELMET(ME);
             } else if(strategy === STRATEGY_DEFENSIVE && getTurn()%2 === 0 && canUseChips(ME, ENEMY, CHIP_CURE) && !inDanger(ENEMY)){
                 INIT_CHIP = true;
-                return [ACTION_SEQUENCE, STRETCH(ME), CURE(ME), HELMET(ME), BANDAGE(ME)];            
+                return [ACTION_SEQUENCE, STRETCH(ME), HELMET(ME), CURE(ME), BANDAGE(ME)];            
             }
         }
 
@@ -133,28 +137,46 @@ function decideNextActionSolo() {
         }
 
         // Check if we can attack
-        if(canUseWeapons(ME, ENEMY, WEAPON) && getTP()>=5){
+        if(tooCloseToUseChip(ME, ENEMY, CHIP_FLAME) && getTP() == 8 && getMP() > 0 && !STEP_BACK_BLOCKED){
+            debug("====> Too close to use flame");
+            return AWAY_FROM(ENEMY);
+        } else if(canUseChips(ME, ENEMY, CHIP_FLAME) && getTP() == 8){
+            debug("====> We can use FLAME : fire");
+            return FLAME(ENEMY);
+        } else if(canAdvanceToUseChip(ME, ENEMY, CHIP_FLAME) && getTP() == 8){
+            debug("====> advance to use flame : go");
+            return TOWARD(ENEMY);
+        } else if(canUseWeapons(ME, ENEMY, WEAPON)){
             debug("====> We can use weapons : fire");
             return FIRE(ENEMY);
-        } else if(canAdvanceToUseWeapon(ME, ENEMY, WEAPON) && getTP()>=5){
-            debug("====> We can advance touse weapons : go");
+        } else if(canAdvanceToUseWeapon(ME, ENEMY, WEAPON)){
+            debug("====> We can advance to use weapons : go");
             return TOWARD(ENEMY);
-        } else if(canUseChips(ME, ENEMY, CHIP_ICE) && getTP()>=4){
+        } else if(tooCloseToUseChip(ME, ENEMY, CHIP_FLAME) && getTP() == 8 && getMP() > 0 && !STEP_BACK_BLOCKED){
+            debug("====> Too close to use flame");
+            return AWAY_FROM(ENEMY);
+        } else if(canUseChips(ME, ENEMY, CHIP_FLAME)){
+            debug("====> We can use FLAME : fire");
+            return FLAME(ENEMY);
+        } else if(canAdvanceToUseChip(ME, ENEMY, CHIP_FLAME)){
+            debug("====> advance to use flame : go");
+            return TOWARD(ENEMY);
+        } else if(canUseChips(ME, ENEMY, CHIP_ICE)){
             debug("====> We can use Ice : fire !");
             return ICE(ENEMY);
-        } else if(canAdvanceToUseChip(ME, ENEMY, CHIP_ICE) && getTP()>=4){
+        } else if(canAdvanceToUseChip(ME, ENEMY, CHIP_ICE)){
             debug("====> We can advance to use ice : go");
             return TOWARD(ENEMY);
-        } else if(canUseChips(ME, ENEMY, CHIP_SPARK) && getTP()>=3){
+        } else if(canUseChips(ME, ENEMY, CHIP_SPARK)){
             debug("====> We can use Spark : fire !");
             return SPARK(ENEMY);
-        } else if(canAdvanceToUseChip(ME, ENEMY, CHIP_SPARK) && getTP()>=3){
+        } else if(canAdvanceToUseChip(ME, ENEMY, CHIP_SPARK)){
             debug("====> We can advance to use spark : go");
             return TOWARD(ENEMY);
-        } else if(canUseChips(ME, ENEMY, CHIP_PEBBLE) && getTP()>=2){
+        } else if(canUseChips(ME, ENEMY, CHIP_PEBBLE)){
             debug("====> We can use Pebble : fire !");
             return PEBBLE(ENEMY);
-        } else if(!canRun(ME, ENEMY, WEAPON, CHIP_SPARK, strategy) && canAdvanceToUseChip(ME, ENEMY, CHIP_PEBBLE) && getTP()>=2){
+        } else if(!canRun(ME, ENEMY, WEAPON, CHIP_SPARK, strategy) && canAdvanceToUseChip(ME, ENEMY, CHIP_PEBBLE)){
             debug("====> We can advance to use pebbles : go");
             return TOWARD(ENEMY);
         }
@@ -325,7 +347,7 @@ function canUseWeapons(me, enemy, weapon){
             maxScope = 7;
         }
         
-        return !inArray(WEAPONS_INVALID, weapon) && (distance(me, enemy) <= maxScope);
+        return !inArray(WEAPONS_INVALID, weapon) && (distance(me, enemy) <= maxScope) && getTP(me)>=getWeaponCost(weapon);
 }
 
 function canAdvanceToUseWeapon(me, enemy, weapon){
@@ -347,7 +369,7 @@ function canAdvanceToUseWeapon(me, enemy, weapon){
         }
         var mp = getMP(me);
         var dist = distance(me, enemy);
-        return mp > 0 && !inArray(WEAPONS_INVALID, weapon) && (dist-mp <= maxScope && dist-1 >= minScope);
+        return mp > 0 && !inArray(WEAPONS_INVALID, weapon) && (dist-mp <= maxScope && dist-1 >= minScope) && getTP(me)>=getWeaponCost(weapon);
 }
 
 function canUseChips(me, enemy, chip){
@@ -360,8 +382,10 @@ function canUseChips(me, enemy, chip){
             maxScope = 6;
         } else if(chip === CHIP_ICE){
             maxScope = 8;
+        } else if(chip === CHIP_FLAME){
+            maxScope = 7;
         }
-        return !inArray(CHIPS_COOLDOWN, chip) && !inArray(CHIPS_INVALID, chip) && distance(me, enemy) <= maxScope;
+        return !inArray(CHIPS_COOLDOWN, chip) && !inArray(CHIPS_INVALID, chip) && distance(me, enemy) <= maxScope && getTP(me)>=getChipCost(chip);
 }
 
 function canAdvanceToUseChip(me, enemy, chip){
@@ -372,6 +396,8 @@ function canAdvanceToUseChip(me, enemy, chip){
             maxScope = 10;
         } else if(chip === CHIP_ICE){
             maxScope = 8;
+        } else if(chip === CHIP_FLAME){
+            maxScope = 7;
         }
         var minScope = getChipMinScope(chip);
         if(chip === CHIP_PEBBLE){
@@ -380,10 +406,12 @@ function canAdvanceToUseChip(me, enemy, chip){
             minScope = 1;
         } else if(chip === CHIP_ICE){
             minScope = 1;
+        } else if(chip === CHIP_ICE){
+            minScope = 2;
         }
         var mp = getMP(me);
         var dist = distance(me, enemy);
-        return mp > 0 && !inArray(CHIPS_INVALID, chip) && !inArray(CHIPS_COOLDOWN, chip) && dist-mp <= maxScope && dist-1 >= minScope;
+        return mp > 0 && !inArray(CHIPS_INVALID, chip) && !inArray(CHIPS_COOLDOWN, chip) && dist-mp <= maxScope && dist-1 >= minScope && getTP(me)>=getChipCost(chip);
 }
 
 function tooCloseToUseWeapon(me, enemy, weapon){
@@ -392,6 +420,16 @@ function tooCloseToUseWeapon(me, enemy, weapon){
             minScope = 2;
         } else if(weapon === WEAPON_MAGNUM){
             minScope = 1;
+        } else {
+            minScope = 1;
+        }
+        return distance(me, enemy) < minScope;
+}
+
+function tooCloseToUseChip(me, enemy, chip){
+        var minScope = getChipMinScope(chip);
+        if(chip === CHIP_FLAME){
+            minScope = 2;
         } else {
             minScope = 1;
         }
@@ -493,6 +531,10 @@ function displayChip(){
 
 function SPARK(leek){
         return [ACTION_USE_CHIP, CHIP_SPARK, leek];
+}
+
+function FLAME(leek){
+        return [ACTION_USE_CHIP, CHIP_FLAME, leek];
 }
 
 function BANDAGE(leek){

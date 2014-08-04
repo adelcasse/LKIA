@@ -25,10 +25,10 @@ Can be used stating level 21 (18 if you remove the use of the CURE chip, 16 if y
 
 SOLO ONLY
 
-Can be used starting level 27 (we use the magnum weapon)
+Can be used starting level 29 (we use the magnum weapon) (27 if we remove the use of the FLAMME chip)
 
 #### Uses :
 
  * weapon : MAGNUM
- * chips : PEBBLE, SPARK, ICE, BANDAGE, HELMET, PROTEIN, CURE, STRETCHING
+ * chips : PEBBLE, SPARK, ICE, BANDAGE, HELMET, PROTEIN, CURE, STRETCHING, FLAME
 
