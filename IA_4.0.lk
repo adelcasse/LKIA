@@ -105,7 +105,21 @@ function decideNextActionSolo() {
 
         //Initializee
         if(!INIT_CHIP){
-            if(inDanger(ME) && !inDanger(ENEMY)){
+            if(getTurn()%3 === 1){
+                INIT_CHIP = true;
+                return STRETCH(ME);
+            } else if(getTurn()%3 === 2){
+                INIT_CHIP = true;
+                if(getTurn()%6 === 2){
+                    return HELMET(ME);
+                } else {
+                    return CURE(ME);
+                }
+            } else if(getTurn()%3 === 0){
+                INIT_CHIP = true;
+                return PROTEIN(ME);
+            }
+            /*if(inDanger(ME) && !inDanger(ENEMY)){
                 INIT_CHIP = true;
                 return [ACTION_SEQUENCE, STRETCH(ME), CURE(ME), HELMET(ME), BANDAGE(ME)];
             } else if(getTurn()%4 === 1){
@@ -117,7 +131,7 @@ function decideNextActionSolo() {
             } else if(getTurn()%4 === 3){
                 INIT_CHIP = true;
                 return PROTEIN(ME);
-            }
+            }*/
         }
 
         if(inArray(CHIPS_INVALID, CHIP_FLAME) && getMP() > 0 && getTP() == 8){
@@ -201,7 +215,10 @@ function decideNextActionSolo() {
 
         // Let's see how we should move now depending on the strategy
         if(getMP() > 0){
-            if(strategy === STRATEGY_OFFENSIVE && getMP(ME)>0 && distance(ME, ENEMY) > 1){
+            if(getTurn() >= 50 && getMP() > 0 && distance(ME, ENEMY) > 9){
+                return TOWARD(ENEMY);
+            }
+            else if(strategy === STRATEGY_OFFENSIVE && getMP(ME)>0 && distance(ME, ENEMY) > 1){
                 debug("====> We are offensive : go !!!");
                 if(canAdvanceWithoutDanger(ME, ENEMY)){
                     debug("====> We can advance without danger : go");
@@ -307,7 +324,7 @@ function executeAction(action) {
 
         else if(actionType === ACTION_STOP){
                 debug("==> ACTION_STOP");
-                useChip(CHIP_CURE, ME);
+                //useChip(CHIP_CURE, ME);
                 useChip(CHIP_BANDAGE, ME);
         }
 

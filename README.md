@@ -32,3 +32,9 @@ Can be used starting level 29 (we use the magnum weapon) (27 if we remove the us
  * weapon : MAGNUM
  * chips : PEBBLE, SPARK, ICE, BANDAGE, HELMET, PROTEIN, CURE, STRETCHING, FLAME
 
+ TODO :
+ ======
+
+  * Implement : "If the enemy has low life, and the max damage he can do to me (with PROTEIN) is less than my life, don't use defensive chips"
+    * (or "if the difference of life between me and enemy is more than the max damage he can do to me, full attacke, don't use defensive chips")
+
