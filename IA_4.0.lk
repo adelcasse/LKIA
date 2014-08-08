@@ -113,51 +113,19 @@ function decideNextActionSolo() {
         //Initializee
         if(!INIT_CHIP){
             debug("MaxDamage :");
-            debug(getMaxDamage(ENEMY));
-            /*if(getTurn()%4 === 1){
+            debug(getMaxDamage(ENEMY));    
+            if(getTurn()%4 === 1){
                 INIT_CHIP = true;
-                return STRETCH(ME);
-            } else if(getTurn()%4 === 1){
-                INIT_CHIP = true;
-                return PROTEIN(ME);
+                //return STRETCH(ME);
             } else if(getTurn()%4 === 2){
                 INIT_CHIP = true;
-                if(getTurn() != 2){
-                    return [ACTION_SEQUENCE, HELMET(ME), CURE(ME)];
-                } else{
-                    return HELMET(ME);
-                }
+                return [ACTION_SEQUENCE, STRETCH(ME), HELMET(ME)];
             } else if(getTurn()%4 === 3){
                 INIT_CHIP = true;
-                return STEROID(ME);
-            }*/ /*else if(getTurn()%4 === 0){
+                return [ACTION_SEQUENCE, MOTIVATION(ME), STEROID(ME)];
+            } else if(getTurn()%4 === 0){
                 INIT_CHIP = true;
-                return PROTEIN(ME);
-            }   */         
-            if(getTurn()%8 === 1){
-                INIT_CHIP = true;
-                return STRETCH(ME);
-            } else if(getTurn()%8 === 2){
-                INIT_CHIP = true;
-                return [ACTION_SEQUENCE, HELMET(ME), MOTIVATION(ME)];
-            } else if(getTurn()%8 === 3){
-                INIT_CHIP = true;
-                return STEROID(ME);
-            } else if(getTurn()%8 === 4){
-                INIT_CHIP = true;
-                return PROTEIN(ME);
-            } else if(getTurn()%8 === 5){
-                INIT_CHIP = true;
-                return STRETCH(ME);
-            } else if(getTurn()%8 === 6){
-                INIT_CHIP = true;
-                return [ACTION_SEQUENCE, HELMET(ME), MOTIVATION(ME)];
-            } else if(getTurn()%8 === 7){
-                INIT_CHIP = true;
-                return STEROID(ME);
-            } else if(getTurn()%8 === 0){
-                INIT_CHIP = true;
-                return PROTEIN(ME);
+                //return PROTEIN(ME);
             }
         }
 
@@ -549,15 +517,6 @@ function canRun(me, enemy, weapon, chip, strategy){
     if(strategy == STRATEGY_DEFENSIVE && dist-getMP(enemy) <= chipScope && dist-getMP(enemy)+getMP(me) > chipScope){
         return true;
     }
-
-    /*if(strategy === STRATEGY_DEFENSIVE && dist <= weaponScope && dist+getMP(me) > weaponScope){
-        return true;
-    }
-
-    if(strategy === STRATEGY_DEFENSIVE && dist <= chipScope && dist+getMP(me) > chipScope){
-        return true;
-    }*/
-
     return false;
 }
 
