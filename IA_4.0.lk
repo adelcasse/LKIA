@@ -33,6 +33,9 @@ global ACTION_USE_CHIP = 4;
 global ACTION_SEQUENCE = 100;
 
 
+global CHIPS_UNAVAILABLE = [CHIP_ICE, CHIP_BANDAGE];
+
+
 
 
 /************************
@@ -47,12 +50,14 @@ global CHIPS_COOLDOWN = [];
 global CHIPS_INVALID = [];
 global WEAPONS_INVALID = [];
 global STEP_BACK_BLOCKED = false;
-global LAST_ENEMY_FORCE;
 
 global INIT_CHIP = false;
 global INIT_SHIFT = 2;
 
+global ENEMIES_FORCE = [];
+global ENEMIES_CHIPS_TURNS = [];
 
+global STARTING_LEEK;
 
 
 
@@ -102,36 +107,58 @@ function decideNextActionSolo() {
 
         debug("Distance to enemy : " + distance(ME, ENEMY));
 
+        updateEnemyGlobals(ENEMY);
+
 
         //Initializee
         if(!INIT_CHIP){
-            if(getTurn()%3 === 1){
+            debug("MaxDamage :");
+            debug(getMaxDamage(ENEMY));
+            /*if(getTurn()%4 === 1){
                 INIT_CHIP = true;
                 return STRETCH(ME);
-            } else if(getTurn()%3 === 2){
+            } else if(getTurn()%4 === 1){
                 INIT_CHIP = true;
-                if(getTurn()%6 === 2){
+                return PROTEIN(ME);
+            } else if(getTurn()%4 === 2){
+                INIT_CHIP = true;
+                if(getTurn() != 2){
+                    return [ACTION_SEQUENCE, HELMET(ME), CURE(ME)];
+                } else{
                     return HELMET(ME);
-                } else {
-                    return CURE(ME);
                 }
-            } else if(getTurn()%3 === 0){
+            } else if(getTurn()%4 === 3){
+                INIT_CHIP = true;
+                return STEROID(ME);
+            }*/ /*else if(getTurn()%4 === 0){
+                INIT_CHIP = true;
+                return PROTEIN(ME);
+            }   */         
+            if(getTurn()%8 === 1){
+                INIT_CHIP = true;
+                return STRETCH(ME);
+            } else if(getTurn()%8 === 2){
+                INIT_CHIP = true;
+                return [ACTION_SEQUENCE, HELMET(ME), MOTIVATION(ME)];
+            } else if(getTurn()%8 === 3){
+                INIT_CHIP = true;
+                return STEROID(ME);
+            } else if(getTurn()%8 === 4){
+                INIT_CHIP = true;
+                return PROTEIN(ME);
+            } else if(getTurn()%8 === 5){
+                INIT_CHIP = true;
+                return STRETCH(ME);
+            } else if(getTurn()%8 === 6){
+                INIT_CHIP = true;
+                return [ACTION_SEQUENCE, HELMET(ME), MOTIVATION(ME)];
+            } else if(getTurn()%8 === 7){
+                INIT_CHIP = true;
+                return STEROID(ME);
+            } else if(getTurn()%8 === 0){
                 INIT_CHIP = true;
                 return PROTEIN(ME);
             }
-            /*if(inDanger(ME) && !inDanger(ENEMY)){
-                INIT_CHIP = true;
-                return [ACTION_SEQUENCE, STRETCH(ME), CURE(ME), HELMET(ME), BANDAGE(ME)];
-            } else if(getTurn()%4 === 1){
-                INIT_CHIP = true;
-                return [ACTION_SEQUENCE, STRETCH(ME)];
-            } else if(getTurn()%4 === 2){
-                INIT_CHIP = true;
-                return [ACTION_SEQUENCE, HELMET(ME), CURE(ME)];
-            } else if(getTurn()%4 === 3){
-                INIT_CHIP = true;
-                return PROTEIN(ME);
-            }*/
         }
 
         if(inArray(CHIPS_INVALID, CHIP_FLAME) && getMP() > 0 && getTP() == 8){
@@ -325,7 +352,9 @@ function executeAction(action) {
         else if(actionType === ACTION_STOP){
                 debug("==> ACTION_STOP");
                 //useChip(CHIP_CURE, ME);
-                useChip(CHIP_BANDAGE, ME);
+                if(!inArray(CHIPS_UNAVAILABLE, CHIP_BANDAGE)){
+                    useChip(CHIP_BANDAGE, ME);
+                }
         }
 
         else if(actionType === ACTION_SEQUENCE){
@@ -404,6 +433,9 @@ function canAdvanceToUseWeapon(me, enemy, weapon){
 }
 
 function canUseChips(me, enemy, chip){
+        if(inArray(CHIPS_UNAVAILABLE, chip)){
+            return false;
+        }
         var maxScope = getChipMaxScope(chip);
         if(chip === CHIP_PEBBLE){
             maxScope = 5;
@@ -420,6 +452,9 @@ function canUseChips(me, enemy, chip){
 }
 
 function canAdvanceToUseChip(me, enemy, chip){
+        if(inArray(CHIPS_UNAVAILABLE, chip)){
+            return false;
+        }
         var maxScope = getChipMaxScope(chip);
         if(chip === CHIP_PEBBLE){
             maxScope = 5;
@@ -526,6 +561,126 @@ function canRun(me, enemy, weapon, chip, strategy){
     return false;
 }
 
+function updateEnemyGlobals(enemy){
+    if(getTurn() === 1){
+        if(getFrequency() < getFrequency(enemy)){
+            STARTING_LEEK = enemy;
+        } else if(getFrequency() > getFrequency(enemy)){
+            STARTING_LEEK = ME;
+        } else {
+            STARTING_LEEK = -1;
+        }
+        ENEMIES_FORCE[enemy] = getForce(enemy);
+        ENEMIES_CHIPS_TURNS[enemy] = [];
+        ENEMIES_CHIPS_TURNS[enemy][CHIP_PROTEIN] = -1000;
+        ENEMIES_CHIPS_TURNS[enemy][CHIP_STEROID] = -1000;
+        ENEMIES_CHIPS_TURNS[enemy][CHIP_HELMET] = -1000;
+    }
+
+    ENEMIES_FORCE[enemy] = min(getForce(enemy), ENEMIES_FORCE[enemy]);
+
+    if(getForce(enemy) === ENEMIES_FORCE[enemy] + 50){
+        if(ENEMIES_CHIPS_TURNS[enemy][CHIP_PROTEIN] < getTurn()-2){
+            if(STARTING_LEEK === ME){
+                ENEMIES_CHIPS_TURNS[enemy][CHIP_PROTEIN] = getTurn()-1;
+            } else {
+                ENEMIES_CHIPS_TURNS[enemy][CHIP_PROTEIN] = getTurn();
+            }
+        }
+    } else if(getForce(enemy) === ENEMIES_FORCE[enemy] + 100){
+        if(ENEMIES_CHIPS_TURNS[enemy][CHIP_STEROID] < getTurn()-3){
+            if(STARTING_LEEK === ME){
+                ENEMIES_CHIPS_TURNS[enemy][CHIP_STEROID] = getTurn()-1;
+            } else {
+                ENEMIES_CHIPS_TURNS[enemy][CHIP_STEROID] = getTurn();
+            }
+        }
+    } else if(getForce(enemy) === ENEMIES_FORCE[enemy] + 150){
+        if(ENEMIES_CHIPS_TURNS[enemy][CHIP_PROTEIN] < getTurn()-2){
+            if(STARTING_LEEK === ME){
+                ENEMIES_CHIPS_TURNS[enemy][CHIP_PROTEIN] = getTurn()-1;
+            } else {
+                ENEMIES_CHIPS_TURNS[enemy][CHIP_PROTEIN] = getTurn();
+            }
+        }
+        if(ENEMIES_CHIPS_TURNS[enemy][CHIP_STEROID] < getTurn()-3){
+            if(STARTING_LEEK === ME){
+                ENEMIES_CHIPS_TURNS[enemy][CHIP_STEROID] = getTurn()-1;
+            } else {
+                ENEMIES_CHIPS_TURNS[enemy][CHIP_STEROID] = getTurn();
+            }
+        }
+    }
+
+    if(getAbsoluteShield(enemy) >= 15){
+        if(ENEMIES_CHIPS_TURNS[enemy][CHIP_HELMET] < getTurn()-3){
+            if(STARTING_LEEK === ME){
+                ENEMIES_CHIPS_TURNS[enemy][CHIP_HELMET] = getTurn()-1;
+            } else {
+                ENEMIES_CHIPS_TURNS[enemy][CHIP_HELMET] = getTurn();
+            }
+        }
+    }
+}
+
+
+
+function hasChipActive(enemy, chip){
+    if(chip === CHIP_PROTEIN){
+        return getTurn() >= ENEMIES_CHIPS_TURNS[enemy][CHIP_PROTEIN] && getTurn() <= ENEMIES_CHIPS_TURNS[enemy][CHIP_PROTEIN]+1;
+    } else if(chip === CHIP_STEROID){
+        return getTurn() >= ENEMIES_CHIPS_TURNS[enemy][CHIP_STEROID] && getTurn() <= ENEMIES_CHIPS_TURNS[enemy][CHIP_STEROID]+2;
+    } else if(chip === CHIP_HELMET){
+        return getTurn() >= ENEMIES_CHIPS_TURNS[enemy][CHIP_HELMET] && getTurn() <= ENEMIES_CHIPS_TURNS[enemy][CHIP_HELMET]+2;
+    }
+}
+
+function countChipTurns(enemy, chip){
+    if(chip === CHIP_HELMET){
+        return getTurn() - ENEMIES_CHIPS_TURNS[enemy][CHIP_HELMET];
+    } else if(chip === CHIP_STEROID){
+        return getTurn() - ENEMIES_CHIPS_TURNS[enemy][CHIP_STEROID];
+    } else if(chip === CHIP_PROTEIN){
+        return getTurn() - ENEMIES_CHIPS_TURNS[enemy][CHIP_PROTEIN];
+    }
+}
+
+function getMaxDamage(enemy){
+    var percent = 0;
+    if(countChipTurns(enemy, CHIP_STEROID) <= 2){
+        percent += 100;
+    }
+    if(countChipTurns(enemy, CHIP_PROTEIN) <= 1){
+        percent += 50;
+    }
+    percent += ENEMIES_FORCE[enemy];
+    return weaponEffects(getWeapon(enemy)) * (1 + percent/100);
+}
+
+function weaponEffects(weapon){
+    if(weapon === WEAPON_MAGNUM){
+        return 40;
+    } else if(weapon === WEAPON_DOUBLE_GUN){
+        return 30;
+    } else if(weapon === WEAPON_SHOTGUN){
+        return 43;
+    } else if(weapon === WEAPON_MACHINE_GUN){
+        return 24;
+    } else if(weapon === WEAPON_PISTOL){
+        return 20;
+    } else if(weapon === WEAPON_LASER){
+        return 59;
+    } else if(weapon === WEAPON_GRENADE_LAUNCHER){
+        return 53;
+    } else if(weapon === WEAPON_FLAME_THROWER){
+        return 68;
+    } else if(weapon === WEAPON_DESTROYER){
+        return 60;
+    } else {
+        return 40;
+    }
+}
+
 
 
 
@@ -583,9 +738,19 @@ function ICE(leek){
         return [ACTION_USE_CHIP, CHIP_ICE, leek];
 }
 
+function STEROID(leek){
+        push(CHIPS_COOLDOWN, CHIP_STEROID);
+        return [ACTION_USE_CHIP, CHIP_STEROID, leek];
+}
+
 function HELMET(leek){
         push(CHIPS_COOLDOWN, CHIP_HELMET);
         return [ACTION_USE_CHIP, CHIP_HELMET, leek];
+}
+
+function MOTIVATION(leek){
+        push(CHIPS_COOLDOWN, CHIP_MOTIVATION);
+        return [ACTION_USE_CHIP, CHIP_MOTIVATION, leek];
 }
 
 function CURE(leek){
