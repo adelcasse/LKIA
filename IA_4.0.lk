@@ -47,7 +47,7 @@ global WEAPON = WEAPON_MAGNUM;
 
 //Context variables
 global CHIPS_COOLDOWN = [];
-global CHIPS_INVALID = [];
+global CHIPS_INVALID = []; 
 global WEAPONS_INVALID = [];
 global STEP_BACK_BLOCKED = false;
 
