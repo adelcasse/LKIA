@@ -109,6 +109,8 @@ function decideNextActionSolo() {
 
         updateEnemyGlobals(ENEMY);
 
+        debug(INIT_CHIP);
+
 
         //Initializee
         if(!INIT_CHIP){
@@ -117,10 +119,10 @@ function decideNextActionSolo() {
             if(getTurn()%4 === 1){
                 INIT_CHIP = true;
                 //return STRETCH(ME);
-            } else if(getTurn()%4 === 2){
+            } else if(getTurn()%4 === 2 && getLife(ENEMY) > 50){
                 INIT_CHIP = true;
                 return [ACTION_SEQUENCE, STRETCH(ME), HELMET(ME)];
-            } else if(getTurn()%4 === 3){
+            } else if(getTurn()%4 === 3 && getLife(ENEMY) > 50){
                 INIT_CHIP = true;
                 return [ACTION_SEQUENCE, MOTIVATION(ME), STEROID(ME)];
             } else if(getTurn()%4 === 0){
@@ -693,7 +695,7 @@ function PEBBLE(leek){
 }
 
 function ICE(leek){
-        push(CHIPS_COOLDOWN, CHIP_PEBBLE);
+        push(CHIPS_COOLDOWN, CHIP_ICE);
         return [ACTION_USE_CHIP, CHIP_ICE, leek];
 }
 
