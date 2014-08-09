@@ -97,6 +97,18 @@ function decideNextActionSolo() {
         //Define useful variables
         var ENEMY = getNearestEnemy();
 
+                //Initializee
+        /*if(!INIT_CHIP){
+            if(getTurn()%4 === 2){
+                INIT_CHIP = true;
+                return HELMET(ME);
+            }
+        }*/
+
+        if(!inArray(CHIPS_COOLDOWN, CHIP_HELMET)){
+        	return HELMET(ME);
+        }
+
 
         debug("Distance : " + distance(ME, ENEMY));
 
@@ -115,6 +127,18 @@ function decideNextActionSolo() {
             return ICE(ENEMY);
         } else if(canAdvanceToUseChip(ME, ENEMY, CHIP_ICE)){
             debug("====> advance to use ICE : go");
+            return TOWARD(ENEMY);
+        } else if(canUseChips(ME, ENEMY, CHIP_SPARK)){
+            debug("====> We can use Spark : fire !");
+            return SPARK(ENEMY);
+        } else if(canAdvanceToUseChip(ME, ENEMY, CHIP_SPARK)){
+            debug("====> We can advance to use spark : go");
+            return TOWARD(ENEMY);
+        } else if(canUseChips(ME, ENEMY, CHIP_PEBBLE)){
+            debug("====> We can use Pebble : fire !");
+            return PEBBLE(ENEMY);
+        } else if(!canRun(ME, ENEMY, WEAPON, CHIP_SPARK, STRATEGY_MEDIUM) && canAdvanceToUseChip(ME, ENEMY, CHIP_PEBBLE)){
+            debug("====> We can advance to use pebbles : go");
             return TOWARD(ENEMY);
         } else if(canUseChips(ME, ENEMY, CHIP_SHOCK)){
             debug("====> We can use SHOCK : fire");
@@ -223,9 +247,9 @@ function executeAction(action) {
         else if(actionType === ACTION_STOP){
                 debug("==> ACTION_STOP");
                 //useChip(CHIP_CURE, ME);
-                /*if(!inArray(CHIPS_UNAVAILABLE, CHIP_BANDAGE)){
+                if(!inArray(CHIPS_UNAVAILABLE, CHIP_BANDAGE)){
                     useChip(CHIP_BANDAGE, ME);
-                }*/
+                }
         }
 
         else if(actionType === ACTION_SEQUENCE){

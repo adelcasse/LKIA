@@ -109,9 +109,6 @@ function decideNextActionSolo() {
 
         updateEnemyGlobals(ENEMY);
 
-        debug(INIT_CHIP);
-
-
         //Initializee
         if(!INIT_CHIP){
             debug("MaxDamage :");
