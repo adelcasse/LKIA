@@ -3,38 +3,30 @@ LKIA
 
 Licence : GNU/GPL v3
 
-My IA for the game LeekWars (http://leekwars.com/)
+My IAs for the game LeekWars (http://leekwars.com/)
 
-Versions :
-==========
+I have 2 leeks :
+================
 
-There are different versions, depending on the levels
+### Chouchreau :  
 
-### 3.0 :  
-
-SOLO ONLY
-
-Can be used stating level 21 (18 if you remove the use of the CURE chip, 16 if you also remove the use of the PROTEIN chip)
+Level 10
 
 #### Uses :
 
  * weapon : DOUBLE GUN
- * chips : PEBBLE, SPARK, BANDAGE, HELMET, PROTEIN, CURE
+ * chips : BANDAGE, ICE, SHOCK
 
 ### 4.0 : 
 
-SOLO ONLY
-
-Can be used starting level 29 (we use the magnum weapon) (27 if we remove the use of the FLAMME chip)
+Level 53
 
 #### Uses :
 
  * weapon : MAGNUM
- * chips : PEBBLE, SPARK, ICE, BANDAGE, HELMET, PROTEIN, CURE, STRETCHING, FLAME
+ * chips : PEBBLE, SPARK, ICE, BANDAGE, HELMET, PROTEIN, CURE, STRETCHING, FLAME, MOTIVATION, STEROID
+
+ (as it's not possible to use all these chips in the same time, itś possible to disable some of them by putthing them in the array CHIPS_UNAVAILABLE)
 
  TODO :
  ======
-
-  * Implement : "If the enemy has low life, and the max damage he can do to me (with PROTEIN) is less than my life, don't use defensive chips"
-    * (or "if the difference of life between me and enemy is more than the max damage he can do to me, full attacke, don't use defensive chips")
-
